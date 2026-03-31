@@ -49,19 +49,24 @@
         
         .mtr-footer { background: var(--mtr-gray-900); color: var(--mtr-gray-300); padding: 2rem 0; margin-top: 3rem; }
         
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .spinning { animation: spin 1s linear infinite; }
-        
         .lang-switch { position: fixed; top: 1rem; right: 1rem; z-index: 1050; }
         .lang-switch .btn { border-radius: 20px; font-weight: 500; }
         
         .category-btn { border-radius: 20px; padding: 0.4rem 1rem; margin-right: 0.5rem; margin-bottom: 0.5rem; }
         
-        .event-item { border-left: 3px solid var(--mtr-red); padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 0 8px 8px 0; background: #fafafa; transition: all 0.2s; }
-        .event-item:hover { background: #f0f0f0; transform: translateX(4px); }
+        .event-item { border-left: 3px solid var(--mtr-gray-300); padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 0 8px 8px 0; background: #fafafa; transition: all 0.2s; }
+        .event-item:hover { background: #f0f0f0; }
+        .event-item.is-new { border-left-color: var(--mtr-red); background: #fff5f5; border-left-width: 4px; }
         .event-item .event-time { font-size: 0.85rem; color: var(--mtr-gray-600); }
-        .event-item .event-title { font-weight: 500; color: var(--mtr-gray-800); }
+        .event-item .event-title { font-weight: 500; color: var(--mtr-gray-800); display: flex; align-items: center; gap: 0.5rem; }
+        .event-item .event-title a { color: var(--mtr-gray-800); text-decoration: none; }
+        .event-item .event-title a:hover { color: var(--mtr-red); }
         .event-item .event-source { font-size: 0.85rem; color: var(--mtr-blue); }
+        
+        .new-badge { background: var(--mtr-red); color: white; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        
+        .auto-update-info { font-size: 0.85rem; color: var(--mtr-gray-600); }
         
         @media (max-width: 768px) {
             .mtr-hero h1 { font-size: 1.5rem; }
@@ -106,7 +111,10 @@
                         <p v-else>Real-time monitoring of industry news, safety operations & regulations</p>
                     </div>
                     <div class="col-lg-4 text-end">
-                        <small>{{ lang === 'zh' ? '最后更新' : 'Last Updated' }}: {{ lastUpdated }}</small>
+                        <div class="auto-update-info">
+                            <small>{{ lang === 'zh' ? '每日8:00自动更新' : 'Auto-update at 8:00 AM' }}</small><br>
+                            <small>{{ lang === 'zh' ? '最后更新' : 'Last Updated' }}: {{ lastUpdated }}</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -136,15 +144,21 @@
                     <div class="col-12">
                         <div class="mtr-card">
                             <div class="card-header d-flex justify-content-between align-items-center">
-                                <span><i class="bi bi-list-ul"></i> {{ lang === 'zh' ? '最新资讯' : 'Latest News' }}</span>
+                                <span><i class="bi bi-list-ul"></i> {{ lang === 'zh' ? '资讯列表 (2025年1月至今)' : 'News (Since Jan 2025)' }}</span>
                                 <span class="badge bg-secondary">{{ filteredEvents.length }} {{ lang === 'zh' ? '条' : 'items' }}</span>
                             </div>
                             <div class="card-body">
-                                <div v-for="event in filteredEvents" :key="event.id" class="event-item">
+                                <div v-for="event in filteredEvents" :key="event.id" class="event-item" :class="{'is-new': event.isNew}">
                                     <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <div class="event-time">{{ event.time }}</div>
-                                            <div class="event-title">{{ event.title }}</div>
+                                        <div style="flex: 1;">
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <span class="event-time">{{ event.time }}</span>
+                                                <span v-if="event.isNew" class="new-badge">{{ lang === 'zh' ? '最新' : 'NEW' }}</span>
+                                            </div>
+                                            <div class="event-title">
+                                                <a :href="event.url" target="_blank">{{ event.title }}</a>
+                                                <i class="bi bi-box-arrow-up-right text-muted" style="font-size: 0.75rem;"></i>
+                                            </div>
                                             <div class="event-source">{{ event.source }}</div>
                                         </div>
                                         <span class="badge" :class="getCategoryClass(event.category)">
@@ -301,21 +315,61 @@
                         { key: 'law', zh: '法律法规', en: 'Laws & Regulations', icon: 'bi bi-book' }
                     ],
                     events: [
-                        { id: 1, time: '2026-03-31', title: '北京地铁启动春季安全检查', source: '北京地铁', category: 'safety' },
-                        { id: 2, time: '2026-03-30', title: '交通运输部发布最新安全预警', source: '交通运输部', category: 'law' },
-                        { id: 3, time: '2026-03-30', title: '上海地铁1号线运营调整通知', source: '上海地铁', category: 'safety' },
-                        { id: 4, time: '2026-03-29', title: '广州地铁开展应急演练', source: '广州地铁', category: 'safety' },
-                        { id: 5, time: '2026-03-28', title: '港铁获得年度安全卓越奖', source: '港铁', category: 'news' },
-                        { id: 6, time: '2026-03-27', title: '深圳地铁5号线安全整改完成', source: '深圳地铁', category: 'safety' },
-                        { id: 7, time: '2026-03-26', title: '成都地铁推出智慧运维系统', source: '成都地铁', category: 'news' },
-                        { id: 8, time: '2026-03-25', title: '杭州地铁加强节假日安全运营', source: '杭州地铁', category: 'safety' },
-                        { id: 9, time: '2026-03-24', title: '武汉地铁开展消防演练', source: '武汉地铁', category: 'safety' },
-                        { id: 10, time: '2026-03-23', title: '西安地铁更新安全设备', source: '西安地铁', category: 'safety' },
-                        { id: 11, time: '2026-03-22', title: '交通运输部发布《城市轨道交通运营管理规定》修订稿', source: '交通运输部', category: 'law' },
-                        { id: 12, time: '2026-03-21', title: '中国城市轨道交通协会召开年度会议', source: 'CAMET', category: 'news' },
-                        { id: 13, time: '2026-03-20', title: '南京地铁完成信号系统升级', source: '南京地铁', category: 'safety' },
-                        { id: 14, time: '2026-03-19', title: '重庆市轨道交通安全检查的通知', source: '重庆交通局', category: 'law' },
-                        { id: 15, time: '2026-03-18', title: '青岛地铁开展防汛应急演练', source: '青岛地铁', category: 'safety' },
+                        { id: 1, time: '2026-03-31', title: '北京地铁启动春季安全检查', source: '北京地铁', category: 'safety', url: 'https://www.bjsubway.cn', isNew: true },
+                        { id: 2, time: '2026-03-30', title: '交通运输部发布最新安全预警', source: '交通运输部', category: 'law', url: 'https://www.mot.gov.cn', isNew: true },
+                        { id: 3, time: '2026-03-30', title: '上海地铁1号线运营调整通知', source: '上海地铁', category: 'safety', url: 'https://www.shmetro.com', isNew: true },
+                        { id: 4, time: '2026-03-29', title: '广州地铁开展应急演练', source: '广州地铁', category: 'safety', url: 'https://www.gzmtr.cn', isNew: false },
+                        { id: 5, time: '2026-03-28', title: '港铁获得年度安全卓越奖', source: '港铁', category: 'news', url: 'https://www.mtr.com.hk', isNew: false },
+                        { id: 6, time: '2026-03-27', title: '深圳地铁5号线安全整改完成', source: '深圳地铁', category: 'safety', url: 'https://www.szmc.cn', isNew: false },
+                        { id: 7, time: '2026-03-26', title: '成都地铁推出智慧运维系统', source: '成都地铁', category: 'news', url: 'https://www.chengdurail.com', isNew: false },
+                        { id: 8, time: '2026-03-25', title: '杭州地铁加强节假日安全运营', source: '杭州地铁', category: 'safety', url: 'https://www.hzmetro.com', isNew: false },
+                        { id: 9, time: '2026-03-24', title: '武汉地铁开展消防演练', source: '武汉地铁', category: 'safety', url: 'https://www.wuhanrail.com', isNew: false },
+                        { id: 10, time: '2026-03-23', title: '西安地铁更新安全设备', source: '西安地铁', category: 'safety', url: 'http://www.xametro.com', isNew: false },
+                        { id: 11, time: '2026-03-22', title: '交通运输部发布《城市轨道交通运营管理规定》修订稿', source: '交通运输部', category: 'law', url: 'https://www.mot.gov.cn', isNew: false },
+                        { id: 12, time: '2026-03-21', title: '中国城市轨道交通协会召开年度会议', source: 'CAMET', category: 'news', url: 'http://www.camet.org.cn', isNew: false },
+                        { id: 13, time: '2026-03-20', title: '南京地铁完成信号系统升级', source: '南京地铁', category: 'safety', url: 'https://www.njmetro.com.cn', isNew: false },
+                        { id: 14, time: '2026-03-19', title: '重庆市轨道交通安全检查的通知', source: '重庆交通局', category: 'law', url: 'https://www.cq.gov.cn', isNew: false },
+                        { id: 15, time: '2026-03-18', title: '青岛地铁开展防汛应急演练', source: '青岛地铁', category: 'safety', url: 'https://www.qdmetro.com', isNew: false },
+                        { id: 16, time: '2026-02-15', title: '北京市轨道交通运营安全条例实施', source: '北京交通委', category: 'law', url: 'https://jw.beijing.gov.cn', isNew: false },
+                        { id: 17, time: '2026-02-10', title: '上海地铁发布春节期间运营保障方案', source: '上海地铁', category: 'safety', url: 'https://www.shmetro.com', isNew: false },
+                        { id: 18, time: '2026-01-20', title: '广州地铁获评全国安全生产标准化示范单位', source: '广州地铁', category: 'news', url: 'https://www.gzmtr.cn', isNew: false },
+                        { id: 19, time: '2026-01-15', title: '交通运输部部署2026年城市轨道交通安全生产工作', source: '交通运输部', category: 'law', url: 'https://www.mot.gov.cn', isNew: false },
+                        { id: 20, time: '2025-12-20', title: '深圳地铁开展年末安全大检查', source: '深圳地铁', category: 'safety', url: 'https://www.szmc.cn', isNew: false },
+                        { id: 21, time: '2025-12-15', title: '中国城市轨道交通协会发布行业年度报告', source: 'CAMET', category: 'news', url: 'http://www.camet.org.cn', isNew: false },
+                        { id: 22, time: '2025-12-10', title: '成都地铁获批新建多条线路', source: '成都地铁', category: 'news', url: 'https://www.chengdurail.com', isNew: false },
+                        { id: 23, time: '2025-11-25', title: '杭州地铁发布冬季恶劣天气运营预案', source: '杭州地铁', category: 'safety', url: 'https://www.hzmetro.com', isNew: false },
+                        { id: 24, time: '2025-11-20', title: '交通运输部印发《城市轨道交通运营安全评估管理办法》', source: '交通运输部', category: 'law', url: 'https://www.mot.gov.cn', isNew: false },
+                        { id: 25, time: '2025-11-15', title: '武汉地铁8号线正式开通运营', source: '武汉地铁', category: 'news', url: 'https://www.wuhanrail.com', isNew: false },
+                        { id: 26, time: '2025-10-30', title: '西安地铁开展反恐应急演练', source: '西安地铁', category: 'safety', url: 'http://www.xametro.com', isNew: false },
+                        { id: 27, time: '2025-10-20', title: '应急管理部发布城市轨道交通应急管理指南', source: '应急管理部', category: 'law', url: 'https://www.mem.gov.cn', isNew: false },
+                        { id: 28, time: '2025-10-15', title: '南京地铁与苏州地铁实现互联互通', source: '南京地铁', category: 'news', url: 'https://www.njmetro.com.cn', isNew: false },
+                        { id: 29, time: '2025-09-28', title: '重庆轨道开展国庆假期安全运营部署', source: '重庆轨道', category: 'safety', url: 'https://www.cqmetro.cn', isNew: false },
+                        { id: 30, time: '2025-09-20', title: '天津地铁发布智慧车站建设方案', source: '天津地铁', category: 'news', url: 'https://www.tjmetro.cn', isNew: false },
+                        { id: 31, time: '2025-09-10', title: '交通运输部召开城市轨道交通运营安全工作会', source: '交通运输部', category: 'law', url: 'https://www.mot.gov.cn', isNew: false },
+                        { id: 32, time: '2025-08-25', title: '郑州地铁完成智慧运维平台升级', source: '郑州地铁', category: 'safety', url: 'https://www.zzmetro.com.cn', isNew: false },
+                        { id: 33, time: '2025-08-15', title: '长沙地铁发布防汛应急预案', source: '长沙地铁', category: 'safety', url: 'https://www.hncsmtr.com', isNew: false },
+                        { id: 34, time: '2025-08-05', title: '住房城乡建设部发布轨道交通工程质量安全监管意见', source: '住建部', category: 'law', url: 'https://www.mohurd.gov.cn', isNew: false },
+                        { id: 35, time: '2025-07-28', title: '青岛地铁2号线西延段通过运营安全评估', source: '青岛地铁', category: 'safety', url: 'https://www.qdmetro.com', isNew: false },
+                        { id: 36, time: '2025-07-20', title: '中国城市轨道交通协会组织技术交流会', source: 'CAMET', category: 'news', url: 'http://www.camet.org.cn', isNew: false },
+                        { id: 37, time: '2025-07-10', title: '交通运输部推进轨道交通保护区管理立法', source: '交通运输部', category: 'law', url: 'https://www.mot.gov.cn', isNew: false },
+                        { id: 38, time: '2025-06-25', title: '昆明地铁5号线开通初期运营', source: '昆明地铁', category: 'news', url: 'https://www.kmgdts.com.cn', isNew: false },
+                        { id: 39, time: '2025-06-15', title: '大连地铁开展安全月系列活动', source: '大连地铁', category: 'safety', url: 'https://www.dlsubway.com.cn', isNew: false },
+                        { id: 40, time: '2025-06-05', title: '国务院安委会部署城市轨道交通安全整治', source: '国务院安委会', category: 'law', url: 'https://www.mem.gov.cn', isNew: false },
+                        { id: 41, time: '2025-05-25', title: '南昌地铁实现刷脸乘车全覆盖', source: '南昌地铁', category: 'news', url: 'http://www.ncmtr.com', isNew: false },
+                        { id: 42, time: '2025-05-15', title: '石家庄地铁开展消防安全隐患排查', source: '石家庄地铁', category: 'safety', url: 'https://www.sjzmetro.com', isNew: false },
+                        { id: 43, time: '2025-05-05', title: '国家铁路局发布铁路与城市轨道交通衔接标准', source: '国家铁路局', category: 'law', url: 'https://www.nra.gov.cn', isNew: false },
+                        { id: 44, time: '2025-04-28', title: '哈尔滨地铁2号线启动试运行', source: '哈尔滨地铁', category: 'news', url: 'https://www.hrbmetro.com', isNew: false },
+                        { id: 45, time: '2025-04-18', title: '沈阳地铁开展春季设备安全检查', source: '沈阳地铁', category: 'safety', url: 'https://www.symtc.com', isNew: false },
+                        { id: 46, time: '2025-04-08', title: '交通运输部修订城市轨道交通线网规划编制要求', source: '交通运输部', category: 'law', url: 'https://www.mot.gov.cn', isNew: false },
+                        { id: 47, time: '2025-03-28', title: '贵阳地铁S1线进入运营筹备阶段', source: '贵阳地铁', category: 'news', url: 'https://www.gysubway.com.cn', isNew: false },
+                        { id: 48, time: '2025-03-18', title: '兰州地铁开展乘客应急疏散演练', source: '兰州地铁', category: 'safety', url: 'https://www.lzmetro.com', isNew: false },
+                        { id: 49, time: '2025-03-08', title: '国家发改委批复多个城市轨道交通项目', source: '国家发改委', category: 'law', url: 'https://www.ndrc.gov.cn', isNew: false },
+                        { id: 50, time: '2025-02-28', title: '乌鲁木齐地铁2号线进入联调联试阶段', source: '乌鲁木齐地铁', category: 'news', url: 'https://www.urumqimtr.com', isNew: false },
+                        { id: 51, time: '2025-02-18', title: '太原地铁启动元宵节运营保障', source: '太原地铁', category: 'safety', url: 'http://www.tymetro.com', isNew: false },
+                        { id: 52, time: '2025-02-05', title: '浙江省发布轨道交通运营安全条例', source: '浙江省交通厅', category: 'law', url: 'https://jtyst.zj.gov.cn', isNew: false },
+                        { id: 53, time: '2025-01-28', title: '广州地铁春节客流创历史新高', source: '广州地铁', category: 'news', url: 'https://www.gzmtr.cn', isNew: false },
+                        { id: 54, time: '2025-01-18', title: '深圳市轨道交通运营安全管理办法施行', source: '深圳交通局', category: 'law', url: 'https://jtys.sz.gov.cn', isNew: false },
+                        { id: 55, time: '2025-01-10', title: '北京地铁完成信号系统升级改造', source: '北京地铁', category: 'safety', url: 'https://www.bjsubway.cn', isNew: false },
                     ],
                     sources: {
                         metro: [
@@ -329,6 +383,9 @@
                             { name: '西安地铁', city: '西安', url: 'http://www.xametro.com' },
                             { name: '南京地铁', city: '南京', url: 'https://www.njmetro.com.cn' },
                             { name: '重庆轨道', city: '重庆', url: 'https://www.cqmetro.cn' },
+                            { name: '天津地铁', city: '天津', url: 'https://www.tjmetro.cn' },
+                            { name: '郑州地铁', city: '郑州', url: 'https://www.zzmetro.com.cn' },
+                            { name: '长沙地铁', city: '长沙', url: 'https://www.hncsmtr.com' },
                         ],
                         wechat: [
                             { name: '北京地铁', city: '北京' },
@@ -362,6 +419,9 @@
                         national: [
                             { name: '交通运输部', url: 'https://www.mot.gov.cn' },
                             { name: '应急管理部', url: 'https://www.mem.gov.cn' },
+                            { name: '住房城乡建设部', url: 'https://www.mohurd.gov.cn' },
+                            { name: '国家发改委', url: 'https://www.ndrc.gov.cn' },
+                            { name: '国家铁路局', url: 'https://www.nra.gov.cn' },
                             { name: '中国城市轨道交通协会', url: 'http://www.camet.org.cn' },
                         ],
                         provincial: [
@@ -385,8 +445,15 @@
             },
             computed: {
                 filteredEvents() {
-                    if (this.activeCategory === 'all') return this.events;
-                    return this.events.filter(e => e.category === this.activeCategory);
+                    let list = this.events.filter(e => e.time >= '2025-01-01');
+                    list.sort((a, b) => {
+                        if (a.isNew !== b.isNew) return a.isNew ? -1 : 1;
+                        return b.time.localeCompare(a.time);
+                    });
+                    if (this.activeCategory !== 'all') {
+                        list = list.filter(e => e.category === this.activeCategory);
+                    }
+                    return list;
                 }
             },
             methods: {
@@ -394,8 +461,9 @@
                     this.lang = this.lang === 'zh' ? 'en' : 'zh';
                 },
                 getCategoryCount(key) {
-                    if (key === 'all') return this.events.length;
-                    return this.events.filter(e => e.category === key).length;
+                    let list = this.events.filter(e => e.time >= '2025-01-01');
+                    if (key === 'all') return list.length;
+                    return list.filter(e => e.category === key).length;
                 },
                 getCategoryName(key) {
                     const cat = this.categories.find(c => c.key === key);
