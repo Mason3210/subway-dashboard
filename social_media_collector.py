@@ -46,6 +46,8 @@ WECHAT_ACCOUNTS = {
         {"name": "大连地铁", "id": "dalianmetro", "city": "大连"},
         {"name": "东莞轨道交通", "id": "dggdjt", "city": "东莞"},
         {"name": "无锡地铁", "id": "wuximetro", "city": "无锡"},
+        {"name": "佛山地铁", "id": "foshanmetro", "city": "佛山"},
+        {"name": "南宁轨道交通", "id": "nnzdtz", "city": "南宁"},
     ],
     # National Government
     "national": [
@@ -115,6 +117,18 @@ WEIBO_ACCOUNTS = {
         {"name": "西安地铁", "uid": "1853384721", "city": "西安"},
         {"name": "重庆轨道", "uid": "1848646862", "city": "重庆"},
         {"name": "天津地铁", "uid": "1825056707", "city": "天津"},
+        {"name": "南京地铁", "uid": "2029627982", "city": "南京"},
+        {"name": "苏州轨道交通", "uid": "2649271183", "city": "苏州"},
+        {"name": "郑州地铁", "uid": "2991504987", "city": "郑州"},
+        {"name": "长沙地铁", "uid": "2068719825", "city": "长沙"},
+        {"name": "沈阳地铁", "uid": "2067085047", "city": "沈阳"},
+        {"name": "宁波轨道交通", "uid": "2997569825", "city": "宁波"},
+        {"name": "青岛地铁", "uid": "2990419823", "city": "青岛"},
+        {"name": "大连地铁", "uid": "2029406925", "city": "大连"},
+        {"name": "东莞轨道交通", "uid": "", "city": "东莞"},
+        {"name": "无锡地铁", "uid": "2986931825", "city": "无锡"},
+        {"name": "佛山地铁", "uid": "", "city": "佛山"},
+        {"name": "南宁轨道交通", "uid": "", "city": "南宁"},
     ],
     # National Government
     "national": [
@@ -122,18 +136,18 @@ WEIBO_ACCOUNTS = {
         {"name": "中国城市轨道交通协会", "uid": "1921971483", "type": "association"},
         {"name": "应急管理部", "uid": "6286498603", "type": "emergency"},
         {"name": "中国消防", "uid": "2189823192", "type": "emergency"},
-        {"name": "国家铁路局", "uid": "待补充", "type": "rail"},
+        {"name": "国家铁路局", "uid": "", "type": "rail"},
     ],
     # Provincial Transportation
     "provincial_transportation": [
-        {"name": "广东交通", "uid": "待补充", "province": "广东"},
-        {"name": "江苏交通", "uid": "待补充", "province": "江苏"},
-        {"name": "浙江交通", "uid": "待补充", "province": "浙江"},
+        {"name": "广东交通", "uid": "", "province": "广东"},
+        {"name": "江苏交通", "uid": "", "province": "江苏"},
+        {"name": "浙江交通", "uid": "", "province": "浙江"},
     ],
     # Provincial Emergency
     "provincial_emergency": [
-        {"name": "山东应急管理", "uid": "待补充", "province": "山东"},
-        {"name": "广东应急管理", "uid": "待补充", "province": "广东"},
+        {"name": "山东应急管理", "uid": "", "province": "山东"},
+        {"name": "广东应急管理", "uid": "", "province": "广东"},
     ],
 }
 
@@ -215,9 +229,12 @@ class WeiboCollector:
     Alternative: Use weibo-search RSS feed from RSSHub
     """
 
-    def __init__(self, rsshub_url="https://rsshub.app"):
+    def __init__(self, rsshub_urls=None):
         self.accounts = WEIBO_ACCOUNTS
-        self.rsshub_url = rsshub_url
+        self.rsshub_urls = rsshub_urls or [
+            "https://rsshub.app",
+            "https://api.rsshub.app",
+        ]
         self.data = []
 
     def collect_all(self):
@@ -226,78 +243,80 @@ class WeiboCollector:
 
         all_posts = []
 
-        # Try RSSHub first (free, no auth required)
         for category, accounts in self.accounts.items():
             for account in accounts:
-                if account.get("uid") and account.get("uid") != "待补充":
+                if account.get("uid") and account.get("uid") != "":
                     posts = self.fetch_weibo_rss(account)
                     all_posts.extend(posts)
                     time.sleep(1)  # Be respectful
 
-        # Fallback: Try weibo-user RSS endpoint
-        # Note: RSSHub may have rate limits
-
         return {
             "status": "success" if all_posts else "partial",
             "posts_count": len(all_posts),
-            "posts": all_posts[:50],  # Limit to 50 most recent
+            "posts": all_posts[:50],
         }
 
     def fetch_weibo_rss(self, account):
-        """Fetch Weibo posts via RSSHub"""
+        """Fetch Weibo posts via RSSHub with fallback URLs"""
         posts = []
 
-        try:
-            # RSSHub Weibo user timeline
-            uid = account.get("uid")
-            url = f"{self.rsshub_url}/weibo/user/{uid}"
+        for rsshub_url in self.rsshub_urls:
+            try:
+                uid = account.get("uid")
+                url = f"{rsshub_url}/weibo/user/{uid}"
 
-            response = requests.get(url, timeout=30)
+                response = requests.get(
+                    url,
+                    timeout=30,
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                    },
+                )
 
-            if response.status_code == 200:
-                # Parse RSS XML
-                from xml.etree import ElementTree
+                if response.status_code == 200:
+                    from xml.etree import ElementTree
 
-                root = ElementTree.fromstring(response.content)
+                    root = ElementTree.fromstring(response.content)
 
-                for item in root.findall(".//item"):
-                    title = (
-                        item.find("title").text
-                        if item.find("title") is not None
-                        else ""
-                    )
-                    link = (
-                        item.find("link").text if item.find("link") is not None else ""
-                    )
-                    pubDate = (
-                        item.find("pubDate").text
-                        if item.find("pubDate") is not None
-                        else ""
-                    )
-                    description = (
-                        item.find("description").text
-                        if item.find("description") is not None
-                        else ""
-                    )
-
-                    # Filter for safety-related content
-                    if self.is_safety_related(title + " " + description):
-                        posts.append(
-                            {
-                                "title": title,
-                                "link": link,
-                                "date": pubDate,
-                                "source": account.get("name"),
-                                "account_type": account.get(
-                                    "city", account.get("type", "")
-                                ),
-                            }
+                    for item in root.findall(".//item"):
+                        title = (
+                            item.find("title").text
+                            if item.find("title") is not None
+                            else ""
+                        )
+                        link = (
+                            item.find("link").text
+                            if item.find("link") is not None
+                            else ""
+                        )
+                        pubDate = (
+                            item.find("pubDate").text
+                            if item.find("pubDate") is not None
+                            else ""
+                        )
+                        description = (
+                            item.find("description").text
+                            if item.find("description") is not None
+                            else ""
                         )
 
-        except Exception as e:
-            logger.warning(
-                f"Error fetching Weibo RSS for {account.get('name')}: {str(e)}"
-            )
+                        if self.is_safety_related(title + " " + description):
+                            posts.append(
+                                {
+                                    "title": title,
+                                    "link": link,
+                                    "date": pubDate,
+                                    "source": account.get("name"),
+                                    "account_type": account.get(
+                                        "city", account.get("type", "")
+                                    ),
+                                }
+                            )
+                    break
+
+            except Exception as e:
+                logger.warning(f"Error fetching Weibo RSS from {rsshub_url}: {str(e)}")
+                continue
 
         return posts
 
@@ -316,6 +335,27 @@ class WeiboCollector:
             "emergency",
             "safety",
             "incident",
+            "停运",
+            "晚点",
+            "运营调整",
+            "客流管控",
+            "设备故障",
+            "信号故障",
+            "道床故障",
+            "车门",
+            "站台门",
+            "列车",
+            "轨道",
+            "供电",
+            "防汛",
+            "暴风雨",
+            "大客流",
+            "疏散",
+            "应急",
+            "演练",
+            "检查",
+            "整改",
+            "隐患",
         ]
         text_lower = text.lower()
         return any(kw.lower() in text_lower for kw in keywords)

@@ -63,6 +63,41 @@
         .event-item .event-title a:hover { color: var(--mtr-red); }
         .event-item .event-source { font-size: 0.85rem; color: var(--mtr-blue); }
         
+        .event-summary {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--mtr-gray-600);
+            cursor: pointer;
+            padding: 0.5rem;
+            background: var(--mtr-gray-100);
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            transition: all 0.2s;
+        }
+        .event-summary:hover {
+            background: var(--mtr-gray-200);
+        }
+        .event-summary.expanded {
+            display: block;
+            -webkit-line-clamp: unset;
+        }
+        .event-summary-toggle {
+            font-size: 0.75rem;
+            color: var(--mtr-blue);
+            cursor: pointer;
+            margin-top: 0.25rem;
+        }
+        .event-summary-toggle:hover {
+            text-decoration: underline;
+        }
+        
+        .verified-badge { background: var(--mtr-green); color: white; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+        .pending-badge { background: var(--mtr-orange); color: white; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+        
         .new-badge { background: var(--mtr-red); color: white; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600; animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         
@@ -154,15 +189,19 @@
                                             <div class="d-flex align-items-center gap-2 mb-1">
                                                 <span class="event-time">{{ event.time }}</span>
                                                 <span v-if="event.isNew" class="new-badge">{{ lang === 'zh' ? '最新' : 'NEW' }}</span>
-                                                <span v-if="!event.verified" class="badge bg-warning text-dark">{{ lang === 'zh' ? '真实性不确定' : 'Unverified' }}</span>
+                                                <span v-if="event.verified === true" class="verified-badge">{{ lang === 'zh' ? '已核实' : 'Verified' }}</span>
+                                                <span v-else-if="event.verified === false" class="pending-badge">{{ lang === 'zh' ? '待确定' : 'Pending' }}</span>
                                             </div>
                                             <div class="event-title">
-                                                <a :href="event.url" target="_blank">{{ event.title }}</a>
+                                                <a :href="event.url" target="_blank" @click.prevent="toggleSummary(event.id)">{{ event.title }}</a>
                                                 <i class="bi bi-box-arrow-up-right text-muted" style="font-size: 0.75rem;"></i>
                                             </div>
                                             <div class="event-source">{{ event.source }}</div>
-                                            <div v-if="event.summary" class="mt-2 text-muted" style="font-size: 0.9rem; line-height: 1.5;">
+                                            <div v-if="event.summary" class="event-summary" :class="{'expanded': expandedEvents.includes(event.id)}" @click="toggleSummary(event.id)">
                                                 {{ event.summary }}
+                                            </div>
+                                            <div v-if="event.summary" class="event-summary-toggle" @click="toggleSummary(event.id)">
+                                                {{ expandedEvents.includes(event.id) ? (lang === 'zh' ? '点击收起' : 'Click to collapse') : (lang === 'zh' ? '点击展开 (' + event.summary.length + '字符)' : 'Click to expand (' + event.summary.length + ' chars)') }}
                                             </div>
                                         </div>
                                         <span class="badge" :class="getCategoryClass(event.category)">
@@ -419,6 +458,7 @@
                     activeTab: 'news',
                     activeCategory: 'all',
                     lastUpdated: new Date().toLocaleString('zh-CN'),
+                    expandedEvents: [],
                     categories: [
                         { key: 'all', zh: '全部', en: 'All', icon: 'bi bi-list' },
                         { key: 'safety', zh: '安全运营', en: 'Safety Operations', icon: 'bi bi-shield-exclamation' },
@@ -614,6 +654,14 @@
             methods: {
                 toggleLang() {
                     this.lang = this.lang === 'zh' ? 'en' : 'zh';
+                },
+                toggleSummary(eventId) {
+                    const idx = this.expandedEvents.indexOf(eventId);
+                    if (idx > -1) {
+                        this.expandedEvents.splice(idx, 1);
+                    } else {
+                        this.expandedEvents.push(eventId);
+                    }
                 },
                 getCategoryCount(key) {
                     let list = this.events.filter(e => e.time >= '2025-01-01');
