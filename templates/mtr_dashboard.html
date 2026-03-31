@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全球轨道交通安全看板 | Global Subway Safety Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='mtr_dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚇</text></svg>">
+</head>
+<body>
+    <div id="app">
+        <!-- Language Switcher -->
+        <div class="lang-switch">
+            <button @click="toggleLang" class="btn btn-sm" :class="lang === 'zh' ? 'btn-light' : 'btn-outline-light'">
+                {{ lang === 'zh' ? '中文' : 'EN' }}
+            </button>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg mtr-navbar">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <i class="bi bi-train-front-fill"></i>
+                    <span v-if="lang === 'zh'">全球轨道交通安全看板</span>
+                    <span v-else>Global Subway Safety Dashboard</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" :class="{'active': activeTab === 'overview'}" @click="activeTab = 'overview'" href="#">
+                                <i class="bi bi-speedometer2"></i>
+                                {{ lang === 'zh' ? '总览' : 'Overview' }}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" :class="{'active': activeTab === 'china'}" @click="activeTab = 'china'" href="#">
+                                <i class="bi bi-building"></i>
+                                {{ lang === 'zh' ? '中国地铁' : 'China Metro' }}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" :class="{'active': activeTab === 'international'}" @click="activeTab = 'international'" href="#">
+                                <i class="bi bi-globe"></i>
+                                {{ lang === 'zh' ? '国际' : 'International' }}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" :class="{'active': activeTab === 'government'}" @click="activeTab = 'government'" href="#">
+                                <i class="bi bi-bank2"></i>
+                                {{ lang === 'zh' ? '政府动态' : 'Government' }}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" :class="{'active': activeTab === 'social'}" @click="activeTab = 'social'" href="#">
+                                <i class="bi bi-chat-dots"></i>
+                                {{ lang === 'zh' ? '社交媒体' : 'Social Media' }}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <div class="mtr-hero">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <h1 v-if="lang === 'zh'">轨道交通安全监控中心</h1>
+                        <h1 v-else>Railway Safety Monitoring Center</h1>
+                        <p v-if="lang === 'zh'">实时监控全球地铁运营安全动态 · 数据来源: {{ dataSources.total }}个</p>
+                        <p v-else>Real-time monitoring of global subway safety · Data sources: {{ dataSources.total }}</p>
+                    </div>
+                    <div class="col-lg-4 text-end">
+                        <div class="update-time">
+                            <small>{{ lang === 'zh' ? '最后更新' : 'Last Updated' }}: {{ lastUpdated }}</small>
+                            <button @click="refreshData" class="btn btn-sm btn-outline-light ms-2">
+                                <i class="bi bi-arrow-clockwise" :class="{'spinning': isRefreshing}"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="container-fluid py-4">
+            
+            <!-- Overview Tab -->
+            <div v-if="activeTab === 'overview'">
+                <!-- Key Metrics Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="mtr-card metric-card">
+                            <div class="metric-icon bg-primary">
+                                <i class="bi bi-exclamation-triangle"></i>
+                            </div>
+                            <div class="metric-content">
+                                <h3>{{ metrics.totalIncidents }}</h3>
+                                <p>{{ lang === 'zh' ? '安全事件总数' : 'Total Incidents' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mtr-card metric-card">
+                            <div class="metric-icon bg-success">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <div class="metric-content">
+                                <h3>{{ metrics.avgSafetyScore }}</h3>
+                                <p>{{ lang === 'zh' ? '平均安全评分' : 'Avg Safety Score' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mtr-card metric-card">
+                            <div class="metric-icon bg-warning">
+                                <i class="bi bi-graph-up-arrow"></i>
+                            </div>
+                            <div class="metric-content">
+                                <h3>{{ metrics.complianceRate }}%</h3>
+                                <p>{{ lang === 'zh' ? '合规率' : 'Compliance Rate' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mtr-card metric-card">
+                            <div class="metric-icon bg-info">
+                                <i class="bi bi-cloud-check"></i>
+                            </div>
+                            <div class="metric-content">
+                                <h3>{{ dataSources.active }}/{{ dataSources.total }}</h3>
+                                <p>{{ lang === 'zh' ? '活跃数据源' : 'Active Sources' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="row mb-4">
+                    <div class="col-lg-8">
+                        <div class="mtr-card">
+                            <div class="card-header">
+                                <h5><i class="bi bi-bar-chart-line"></i> {{ lang === 'zh' ? '各地区安全评分对比' : 'Regional Safety Scores' }}</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="regionalChart" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="mtr-card">
+                            <div class="card-header">
+                                <h5><i class="bi bi-pie-chart"></i> {{ lang === 'zh' ? '数据源分布' : 'Data Source Distribution' }}</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="sourceChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Updates -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="mtr-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5><i class="bi bi-newspaper"></i> {{ lang === 'zh' ? '最新安全动态' : 'Latest Safety Updates' }}</h5>
+                                <span class="badge bg-secondary">{{ updates.length }} {{ lang === 'zh' ? '条' : 'items' }}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>{{ lang === 'zh' ? '时间' : 'Time' }}</th>
+                                                <th>{{ lang === 'zh' ? '标题' : 'Title' }}</th>
+                                                <th>{{ lang === 'zh' ? '来源' : 'Source' }}</th>
+                                                <th>{{ lang === 'zh' ? '类型' : 'Type' }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(update, index) in updates.slice(0, 10)" :key="index">
+                                                <td><small class="text-muted">{{ update.time }}</small></td>
+                                                <td>{{ update.title }}</td>
+                                                <td><span class="badge bg-outline-primary">{{ update.source }}</span></td>
+                                                <td>
+                                                    <span class="badge" :class="getTypeBadgeClass(update.type)">
+                                                        {{ update.type }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- China Metro Tab -->
+            <div v-if="activeTab === 'china'">
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="mtr-card">
+                            <div class="card-header">
+                                <h5><i class="bi bi-building"></i> {{ lang === 'zh' ? '中国地铁运营公司' : 'China Metro Operators' }}</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>{{ lang === 'zh' ? '城市' : 'City' }}</th>
+                                                <th>{{ lang === 'zh' ? '运营公司' : 'Operator' }}</th>
+                                                <th>{{ lang === 'zh' ? '安全评分' : 'Safety Score' }}</th>
+                                                <th>{{ lang === 'zh' ? '状态' : 'Status' }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="city in chinaMetro" :key="city.name">
+                                                <td>{{ city.city }}</td>
+                                                <td>{{ city.name }}</td>
+                                                <td>
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar" :class="getScoreClass(city.score)" :style="{width: city.score + '%'}">
+                                                            {{ city.score }}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge" :class="city.status === 'active' ? 'bg-success' : 'bg-warning'">
+                                                        {{ city.status === 'active' ? (lang === 'zh' ? '正常' : 'Active') : (lang === 'zh' ? '待更新' : 'Pending') }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- International Tab -->
+            <div v-if="activeTab === 'international'">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mtr-card">
+                            <div class="card-header">
+                                <h5><i class="bi bi-globe-americas"></i> {{ lang === 'zh' ? '国际地铁系统' : 'International Metro Systems' }}</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    <a v-for="sys in internationalSystems" :href="sys.url" target="_blank" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">{{ sys.name }}</h6>
+                                            <small>{{ sys.country }}</small>
+                                        </div>
+                                        <small class="text-muted">{{ sys.score }} / 100</small>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mtr-card">
+                            <div class="card-header">
+                                <h5><i class="bi bi-bar-chart"></i> {{ lang === 'zh' ? '国际安全对比' : 'International Comparison' }}</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="intlChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Government Tab -->
+            <div v-if="activeTab === 'government'">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mtr-card">
+                            <div class="card-header bg-danger text-white">
+                                <h5><i class="bi bi-bank"></i> {{ lang === 'zh' ? '国家级部门' : 'National Agencies' }}</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li v-for="agency in government.national" :key="agency.name" class="list-group-item">
+                                        <a :href="agency.url" target="_blank">{{ agency.name }}</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mtr-card">
+                            <div class="card-header bg-warning text-dark">
+                                <h5><i class="bi bi-building"></i> {{ lang === 'zh' ? '省级部门' : 'Provincial Agencies' }}</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li v-for="agency in government.provincial.slice(0, 10)" :key="agency.name" class="list-group-item">
+                                        <a :href="agency.url" target="_blank">{{ agency.name }}</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mtr-card">
+                            <div class="card-header bg-info text-dark">
+                                <h5><i class="bi bi-bank2"></i> {{ lang === 'zh' ? '市级部门' : 'City Agencies' }}</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li v-for="agency in government.city.slice(0, 10)" :key="agency.name" class="list-group-item">
+                                        <a :href="agency.url" target="_blank">{{ agency.name }}</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Media Tab -->
+            <div v-if="activeTab === 'social'">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mtr-card">
+                            <div class="card-header">
+                                <h5><i class="bi bi-wechat"></i> {{ lang === 'zh' ? '微信公众号' : 'WeChat Accounts' }}</h5>
+                                <span class="badge bg-success">{{ socialMedia.wechat }} {{ lang === 'zh' ? '个账号' : 'accounts' }}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>{{ lang === 'zh' ? '公众号名称' : 'Account' }}</th>
+                                                <th>{{ lang === 'zh' ? '城市' : 'City' }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="acc in socialMediaAccounts.wechat" :key="acc.name">
+                                                <td>{{ acc.name }}</td>
+                                                <td>{{ acc.city }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mtr-card">
+                            <div class="card-header">
+                                <h5><i class="bi bi-weibo"></i> {{ lang === 'zh' ? '新浪微博' : 'Weibo Accounts' }}</h5>
+                                <span class="badge bg-danger">{{ socialMedia.weibo }} {{ lang === 'zh' ? '个账号' : 'accounts' }}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>{{ lang === 'zh' ? '微博名称' : 'Account' }}</th>
+                                                <th>{{ lang === 'zh' ? '城市' : 'City' }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="acc in socialMediaAccounts.weibo" :key="acc.name">
+                                                <td>{{ acc.name }}</td>
+                                                <td>{{ acc.city }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="mtr-footer">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p v-if="lang === 'zh'">
+                            &copy; 2024 全球轨道交通安全看板 | 数据仅供参考
+                        </p>
+                        <p v-else>
+                            &copy; 2024 Global Subway Safety Dashboard | Data for reference only
+                        </p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <p>
+                            <small v-if="lang === 'zh'">Powered by Python Flask & Vue.js</small>
+                            <small v-else>Powered by Python Flask & Vue.js</small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='mtr_dashboard.js') }}"></script>
+</body>
+</html>

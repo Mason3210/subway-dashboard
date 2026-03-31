@@ -1,0 +1,392 @@
+/* MTR-style Dashboard CSS */
+/* Design reference: https://www.mtr.com.hk */
+
+:root {
+    /* MTR Brand Colors */
+    --mtr-red: #E31837;
+    --mtr-dark-red: #C4162C;
+    --mtr-light-red: #F5A8B3;
+    --mtr-gold: #FFD100;
+    --mtr-blue: #0069C0;
+    --mtr-green: #00875A;
+    --mtr-orange: #FF8C00;
+    
+    /* Neutral Colors */
+    --mtr-gray-100: #F5F5F5;
+    --mtr-gray-200: #E0E0E0;
+    --mtr-gray-300: #BDBDBD;
+    --mtr-gray-600: #757575;
+    --mtr-gray-800: #424242;
+    --mtr-gray-900: #212121;
+    
+    /* Background */
+    --bg-light: #FAFAFA;
+    --bg-dark: #212121;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Helvetica Neue', Arial, 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background-color: var(--bg-light);
+    color: var(--mtr-gray-800);
+    line-height: 1.6;
+}
+
+/* Navigation */
+.mtr-navbar {
+    background: linear-gradient(135deg, var(--mtr-red) 0%, var(--mtr-dark-red) 100%);
+    padding: 0.75rem 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.mtr-navbar .navbar-brand {
+    color: white !important;
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mtr-navbar .navbar-brand i {
+    font-size: 1.8rem;
+}
+
+.mtr-navbar .nav-link {
+    color: rgba(255,255,255,0.85) !important;
+    font-weight: 500;
+    padding: 0.5rem 1rem !important;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.mtr-navbar .nav-link:hover,
+.mtr-navbar .nav-link.active {
+    color: white !important;
+    background-color: rgba(255,255,255,0.15);
+}
+
+.mtr-navbar .navbar-toggler {
+    border-color: rgba(255,255,255,0.5);
+}
+
+.mtr-navbar .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255,255,255,0.85%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Hero Section */
+.mtr-hero {
+    background: linear-gradient(135deg, var(--mtr-gray-900) 0%, var(--mtr-gray-800) 100%);
+    color: white;
+    padding: 3rem 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.mtr-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="30" fill="rgba(255,255,255,0.05)">🚇</text></svg>');
+    opacity: 0.3;
+}
+
+.mtr-hero h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.mtr-hero p {
+    font-size: 1.1rem;
+    opacity: 0.85;
+    position: relative;
+}
+
+.update-time {
+    background: rgba(255,255,255,0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+/* Cards */
+.mtr-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mtr-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+
+.mtr-card .card-header {
+    background: var(--mtr-gray-100);
+    border-bottom: 2px solid var(--mtr-gray-200);
+    padding: 1rem 1.5rem;
+}
+
+.mtr-card .card-header h5 {
+    margin: 0;
+    font-weight: 600;
+    color: var(--mtr-gray-800);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mtr-card .card-header h5 i {
+    color: var(--mtr-red);
+}
+
+.mtr-card .card-body {
+    padding: 1.5rem;
+}
+
+/* Metric Cards */
+.metric-card {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+    gap: 1rem;
+}
+
+.metric-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.metric-icon i {
+    font-size: 1.8rem;
+    color: white;
+}
+
+.metric-icon.bg-primary {
+    background: linear-gradient(135deg, var(--mtr-blue) 0%, #0052A3 100%);
+}
+
+.metric-icon.bg-success {
+    background: linear-gradient(135deg, var(--mtr-green) 0%, #006644 100%);
+}
+
+.metric-icon.bg-warning {
+    background: linear-gradient(135deg, var(--mtr-orange) 0%, #CC7000 100%);
+}
+
+.metric-icon.bg-info {
+    background: linear-gradient(135deg, #17A2B8 0%, #138496 100%);
+}
+
+.metric-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: var(--mtr-gray-900);
+}
+
+.metric-content p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--mtr-gray-600);
+}
+
+/* Tables */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background: var(--mtr-gray-100);
+    border-bottom: 2px solid var(--mtr-red);
+    font-weight: 600;
+    color: var(--mtr-gray-800);
+    padding: 0.75rem 1rem;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: var(--mtr-gray-100);
+}
+
+.table td {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+}
+
+/* Badges */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+.bg-outline-primary {
+    background-color: transparent;
+    border: 1px solid var(--mtr-blue);
+    color: var(--mtr-blue);
+}
+
+/* Progress Bars */
+.progress {
+    border-radius: 10px;
+    background-color: var(--mtr-gray-200);
+}
+
+.progress-bar {
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress-bar.bg-success {
+    background: linear-gradient(135deg, var(--mtr-green) 0%, #006644 100%) !important;
+}
+
+.progress-bar.bg-warning {
+    background: linear-gradient(135deg, var(--mtr-orange) 0%, #CC7000 100%) !important;
+}
+
+.progress-bar.bg-danger {
+    background: linear-gradient(135deg, var(--mtr-red) 0%, var(--mtr-dark-red) 100%) !important;
+}
+
+/* List Groups */
+.list-group-item {
+    border-left: 3px solid var(--mtr-red);
+    transition: all 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: var(--mtr-gray-100);
+    padding-left: 1.25rem;
+}
+
+.list-group-item a {
+    color: var(--mtr-gray-800);
+    text-decoration: none;
+}
+
+.list-group-item a:hover {
+    color: var(--mtr-red);
+}
+
+/* Language Switcher */
+.lang-switch {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1050;
+}
+
+.lang-switch .btn {
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+/* Footer */
+.mtr-footer {
+    background: var(--mtr-gray-900);
+    color: var(--mtr-gray-300);
+    padding: 2rem 0;
+    margin-top: 3rem;
+}
+
+.mtr-footer a {
+    color: white;
+    text-decoration: none;
+}
+
+.mtr-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Animations */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .mtr-hero h1 {
+        font-size: 1.75rem;
+    }
+    
+    .mtr-hero p {
+        font-size: 0.95rem;
+    }
+    
+    .metric-card {
+        padding: 1rem;
+    }
+    
+    .metric-icon {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .metric-icon i {
+        font-size: 1.4rem;
+    }
+    
+    .metric-content h3 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Chart Container */
+.card-body canvas {
+    max-height: 350px;
+}
+
+/* Tab Content */
+.nav-link {
+    cursor: pointer;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--mtr-gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--mtr-gray-300);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--mtr-gray-600);
+}
