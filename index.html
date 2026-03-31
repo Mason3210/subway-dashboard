@@ -178,17 +178,143 @@
 
             <!-- Sources Tab -->
             <div v-if="activeTab === 'sources'">
-                <div class="row">
-                    <div class="col-md-6">
+                <div class="row mb-3">
+                    <div class="col-12">
                         <div class="mtr-card">
-                            <div class="card-header"><i class="bi bi-building"></i> {{ lang === 'zh' ? '地铁运营公司' : 'Metro Operators' }}</div>
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-collection"></i> {{ lang === 'zh' ? '每日数据源监控' : 'Daily Data Source Monitoring' }}</span>
+                                <button @click="checkSources" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-arrow-repeat"></i> {{ lang === 'zh' ? '检测状态' : 'Check Status' }}
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h4 class="text-success">{{ getSourceStats('normal') }}</h4>
+                                            <small class="text-muted">{{ lang === 'zh' ? '正常' : 'Normal' }}</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h4 class="text-danger">{{ getSourceStats('error') }}</h4>
+                                            <small class="text-muted">{{ lang === 'zh' ? '无法访问' : 'Error' }}</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h4 class="text-warning">{{ getSourceStats('unknown') }}</h4>
+                                            <small class="text-muted">{{ lang === 'zh' ? '待检测' : 'Pending' }}</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h4>{{ allSources.length }}</h4>
+                                            <small class="text-muted">{{ lang === 'zh' ? '总计' : 'Total' }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="mtr-card">
+                            <div class="card-header"><i class="bi bi-building"></i> {{ lang === 'zh' ? '地铁运营公司 (官网)' : 'Metro Operators (Official Websites)' }}</div>
                             <div class="card-body">
                                 <div class="table-responsive">
                                     <table class="table table-hover table-sm">
-                                        <thead><tr><th>{{ lang === 'zh' ? '城市' : 'City' }}</th><th>{{ lang === 'zh' ? '名称' : 'Name' }}</th><th>{{ lang === 'zh' ? '来源' : 'Source' }}</th></tr></thead>
+                                        <thead><tr>
+                                            <th>{{ lang === 'zh' ? '状态' : 'Status' }}</th>
+                                            <th>{{ lang === 'zh' ? '城市' : 'City' }}</th>
+                                            <th>{{ lang === 'zh' ? '名称' : 'Name' }}</th>
+                                            <th>{{ lang === 'zh' ? '网址' : 'URL' }}</th>
+                                            <th>{{ lang === 'zh' ? '最后检测' : 'Last Check' }}</th>
+                                        </tr></thead>
                                         <tbody>
-                                            <tr v-for="s in sources.metro" :key="s.name">
+                                            <tr v-for="s in allSources.filter(x => x.type === 'metro')" :key="s.name">
+                                                <td><span class="badge" :class="getStatusClass(s.status)">{{ getStatusText(s.status) }}</span></td>
                                                 <td>{{ s.city }}</td>
+                                                <td>{{ s.name }}</td>
+                                                <td><a :href="s.url" target="_blank" class="text-decoration-none"><i class="bi bi-link-45deg"></i></a></td>
+                                                <td><small class="text-muted">{{ s.lastCheck || '-' }}</small></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mtr-card">
+                            <div class="card-header"><i class="bi bi-wechat"></i> {{ lang === 'zh' ? '微信公众号' : 'WeChat Accounts' }} 
+                                <span class="badge bg-success">{{ allSources.filter(x => x.type === 'wechat').length }}</span></div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm">
+                                        <thead><tr>
+                                            <th>{{ lang === 'zh' ? '状态' : 'Status' }}</th>
+                                            <th>{{ lang === 'zh' ? '公众号' : 'Account' }}</th>
+                                            <th>{{ lang === 'zh' ? '城市' : 'City' }}</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            <tr v-for="s in allSources.filter(x => x.type === 'wechat')" :key="s.name">
+                                                <td><span class="badge" :class="getStatusClass(s.status)">{{ getStatusText(s.status) }}</span></td>
+                                                <td>{{ s.name }}</td>
+                                                <td>{{ s.city }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mtr-card">
+                            <div class="card-header"><i class="bi bi-weibo"></i> {{ lang === 'zh' ? '新浪微博' : 'Weibo Accounts' }} 
+                                <span class="badge bg-danger">{{ allSources.filter(x => x.type === 'weibo').length }}</span></div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm">
+                                        <thead><tr>
+                                            <th>{{ lang === 'zh' ? '状态' : 'Status' }}</th>
+                                            <th>{{ lang === 'zh' ? '微博' : 'Account' }}</th>
+                                            <th>{{ lang === 'zh' ? '城市' : 'City' }}</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            <tr v-for="s in allSources.filter(x => x.type === 'weibo')" :key="s.name">
+                                                <td><span class="badge" :class="getStatusClass(s.status)">{{ getStatusText(s.status) }}</span></td>
+                                                <td>{{ s.name }}</td>
+                                                <td>{{ s.city }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mtr-card">
+                            <div class="card-header"><i class="bi bi-bank"></i> {{ lang === 'zh' ? '政府网站' : 'Government Websites' }}</div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm">
+                                        <thead><tr>
+                                            <th>{{ lang === 'zh' ? '状态' : 'Status' }}</th>
+                                            <th>{{ lang === 'zh' ? '名称' : 'Name' }}</th>
+                                            <th>{{ lang === 'zh' ? '网址' : 'URL' }}</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            <tr v-for="s in allSources.filter(x => x.type === 'government')" :key="s.name">
+                                                <td><span class="badge" :class="getStatusClass(s.status)">{{ getStatusText(s.status) }}</span></td>
                                                 <td>{{ s.name }}</td>
                                                 <td><a :href="s.url" target="_blank" class="text-decoration-none"><i class="bi bi-link-45deg"></i></a></td>
                                             </tr>
@@ -200,44 +326,25 @@
                     </div>
                     <div class="col-md-6">
                         <div class="mtr-card">
-                            <div class="card-header"><i class="bi bi-wechat"></i> {{ lang === 'zh' ? '微信公众号' : 'WeChat' }} <span class="badge bg-success">{{ sources.wechat.length }}</span></div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover table-sm">
-                                        <thead><tr><th>{{ lang === 'zh' ? '公众号' : 'Account' }}</th><th>{{ lang === 'zh' ? '城市' : 'City' }}</th></tr></thead>
-                                        <tbody>
-                                            <tr v-for="s in sources.wechat" :key="s.name"><td>{{ s.name }}</td><td>{{ s.city }}</td></tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mtr-card">
-                            <div class="card-header"><i class="bi bi-weibo"></i> {{ lang === 'zh' ? '新浪微博' : 'Weibo' }} <span class="badge bg-danger">{{ sources.weibo.length }}</span></div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover table-sm">
-                                        <thead><tr><th>{{ lang === 'zh' ? '微博' : 'Account' }}</th><th>{{ lang === 'zh' ? '城市' : 'City' }}</th></tr></thead>
-                                        <tbody>
-                                            <tr v-for="s in sources.weibo" :key="s.name"><td>{{ s.name }}</td><td>{{ s.city }}</td></tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mtr-card">
                             <div class="card-header"><i class="bi bi-globe"></i> {{ lang === 'zh' ? '国际地铁' : 'International Metro' }}</div>
                             <div class="card-body">
-                                <div class="list-group">
-                                    <a v-for="s in sources.international" :href="s.url" target="_blank" class="list-group-item list-group-item-action">
-                                        <div class="d-flex w-100 justify-content-between"><h6 class="mb-1">{{ s.name }}</h6><small>{{ s.country }}</small></div>
-                                    </a>
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm">
+                                        <thead><tr>
+                                            <th>{{ lang === 'zh' ? '状态' : 'Status' }}</th>
+                                            <th>{{ lang === 'zh' ? '名称' : 'Name' }}</th>
+                                            <th>{{ lang === 'zh' ? '国家' : 'Country' }}</th>
+                                            <th>{{ lang === 'zh' ? '网址' : 'URL' }}</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            <tr v-for="s in allSources.filter(x => x.type === 'international')" :key="s.name">
+                                                <td><span class="badge" :class="getStatusClass(s.status)">{{ getStatusText(s.status) }}</span></td>
+                                                <td>{{ s.name }}</td>
+                                                <td>{{ s.country }}</td>
+                                                <td><a :href="s.url" target="_blank" class="text-decoration-none"><i class="bi bi-link-45deg"></i></a></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -415,6 +522,50 @@
                             { name: '纽约地铁 MTA', country: '美国', url: 'https://new.mta.info' },
                         ]
                     },
+                    allSources: [
+                        { type: 'metro', name: '北京地铁', city: '北京', url: 'https://www.bjsubway.cn', status: 'unknown', lastCheck: '' },
+                        { type: 'metro', name: '上海地铁', city: '上海', url: 'https://www.shmetro.com', status: 'unknown', lastCheck: '' },
+                        { type: 'metro', name: '广州地铁', city: '广州', url: 'https://www.gzmtr.cn', status: 'unknown', lastCheck: '' },
+                        { type: 'metro', name: '深圳地铁', city: '深圳', url: 'https://www.szmc.cn', status: 'unknown', lastCheck: '' },
+                        { type: 'metro', name: '成都地铁', city: '成都', url: 'https://www.chengdurail.com', status: 'unknown', lastCheck: '' },
+                        { type: 'metro', name: '杭州地铁', city: '杭州', url: 'https://www.hzmetro.com', status: 'unknown', lastCheck: '' },
+                        { type: 'metro', name: '武汉地铁', city: '武汉', url: 'https://www.wuhanrail.com', status: 'unknown', lastCheck: '' },
+                        { type: 'metro', name: '西安地铁', city: '西安', url: 'http://www.xametro.com', status: 'unknown', lastCheck: '' },
+                        { type: 'metro', name: '南京地铁', city: '南京', url: 'https://www.njmetro.com.cn', status: 'unknown', lastCheck: '' },
+                        { type: 'metro', name: '重庆轨道', city: '重庆', url: 'https://www.cqmetro.cn', status: 'unknown', lastCheck: '' },
+                        { type: 'metro', name: '天津地铁', city: '天津', url: 'https://www.tjmetro.cn', status: 'unknown', lastCheck: '' },
+                        { type: 'metro', name: '郑州地铁', city: '郑州', url: 'https://www.zzmetro.com.cn', status: 'unknown', lastCheck: '' },
+                        { type: 'metro', name: '长沙地铁', city: '长沙', url: 'https://www.hncsmtr.com', status: 'unknown', lastCheck: '' },
+                        { type: 'metro', name: '青岛地铁', city: '青岛', url: 'https://www.qdmetro.com', status: 'unknown', lastCheck: '' },
+                        { type: 'metro', name: '大连地铁', city: '大连', url: 'https://www.dlsubway.com.cn', status: 'unknown', lastCheck: '' },
+                        { type: 'wechat', name: '北京地铁', city: '北京', status: 'unknown', lastCheck: '' },
+                        { type: 'wechat', name: '上海地铁', city: '上海', status: 'unknown', lastCheck: '' },
+                        { type: 'wechat', name: '广州地铁', city: '广州', status: 'unknown', lastCheck: '' },
+                        { type: 'wechat', name: '深圳地铁', city: '深圳', status: 'unknown', lastCheck: '' },
+                        { type: 'wechat', name: '成都地铁', city: '成都', status: 'unknown', lastCheck: '' },
+                        { type: 'wechat', name: '杭州地铁', city: '杭州', status: 'unknown', lastCheck: '' },
+                        { type: 'wechat', name: '武汉地铁', city: '武汉', status: 'unknown', lastCheck: '' },
+                        { type: 'wechat', name: '交通运输部', city: '全国', status: 'unknown', lastCheck: '' },
+                        { type: 'wechat', name: '应急管理部', city: '全国', status: 'unknown', lastCheck: '' },
+                        { type: 'wechat', name: '中国城市轨道交通协会', city: '全国', status: 'unknown', lastCheck: '' },
+                        { type: 'weibo', name: '北京地铁', city: '北京', status: 'unknown', lastCheck: '' },
+                        { type: 'weibo', name: '上海地铁', city: '上海', status: 'unknown', lastCheck: '' },
+                        { type: 'weibo', name: '广州地铁', city: '广州', status: 'unknown', lastCheck: '' },
+                        { type: 'weibo', name: '深圳地铁', city: '深圳', status: 'unknown', lastCheck: '' },
+                        { type: 'weibo', name: '交通运输部', city: '全国', status: 'unknown', lastCheck: '' },
+                        { type: 'weibo', name: '应急管理部', city: '全国', status: 'unknown', lastCheck: '' },
+                        { type: 'government', name: '交通运输部', url: 'https://www.mot.gov.cn', status: 'unknown', lastCheck: '' },
+                        { type: 'government', name: '应急管理部', url: 'https://www.mem.gov.cn', status: 'unknown', lastCheck: '' },
+                        { type: 'government', name: '住房城乡建设部', url: 'https://www.mohurd.gov.cn', status: 'unknown', lastCheck: '' },
+                        { type: 'government', name: '国家发改委', url: 'https://www.ndrc.gov.cn', status: 'unknown', lastCheck: '' },
+                        { type: 'government', name: '国家铁路局', url: 'https://www.nra.gov.cn', status: 'unknown', lastCheck: '' },
+                        { type: 'government', name: '中国城市轨道交通协会', url: 'http://www.camet.org.cn', status: 'unknown', lastCheck: '' },
+                        { type: 'international', name: '港铁 MTR', country: '香港', url: 'https://www.mtr.com.hk', status: 'unknown', lastCheck: '' },
+                        { type: 'international', name: '东京地铁 Tokyo Metro', country: '日本', url: 'https://www.tokyometro.jp', status: 'unknown', lastCheck: '' },
+                        { type: 'international', name: '新加坡地铁 SMRT', country: '新加坡', url: 'https://www.smrt.com.sg', status: 'unknown', lastCheck: '' },
+                        { type: 'international', name: '伦敦地铁 TfL', country: '英国', url: 'https://tfl.gov.uk', status: 'unknown', lastCheck: '' },
+                        { type: 'international', name: '纽约地铁 MTA', country: '美国', url: 'https://new.mta.info', status: 'unknown', lastCheck: '' },
+                    ],
                     government: {
                         national: [
                             { name: '交通运输部', url: 'https://www.mot.gov.cn' },
@@ -472,6 +623,32 @@
                 getCategoryClass(key) {
                     const classes = { 'safety': 'bg-danger', 'news': 'bg-primary', 'law': 'bg-warning text-dark' };
                     return classes[key] || 'bg-secondary';
+                },
+                getSourceStats(status) {
+                    return this.allSources.filter(s => s.status === status).length;
+                },
+                getStatusClass(status) {
+                    const classes = { 'normal': 'bg-success', 'error': 'bg-danger', 'unknown': 'bg-warning' };
+                    return classes[status] || 'bg-secondary';
+                },
+                getStatusText(status) {
+                    const texts = { 'normal': this.lang === 'zh' ? '正常' : 'Normal', 'error': this.lang === 'zh' ? '无法访问' : 'Error', 'unknown': this.lang === 'zh' ? '待检测' : 'Pending' };
+                    return texts[status] || status;
+                },
+                async checkSources() {
+                    const webSources = this.allSources.filter(s => s.url);
+                    for (let s of webSources) {
+                        try {
+                            const controller = new AbortController();
+                            const timeout = setTimeout(() => controller.abort(), 5000);
+                            const response = await fetch(s.url, { method: 'HEAD', signal: controller.signal });
+                            clearTimeout(timeout);
+                            s.status = response.ok ? 'normal' : 'error';
+                        } catch (e) {
+                            s.status = 'error';
+                        }
+                        s.lastCheck = new Date().toLocaleTimeString('zh-CN');
+                    }
                 }
             }
         }).mount('#app');
