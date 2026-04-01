@@ -91,6 +91,8 @@ class RSSFeedAggregator:
         "https://rsshub.app",
         "https://api.rsshub.app",
         "https://rss.bnu.edu.cn",
+        "https://feed.youngst.com",
+        "https://rsshub.rssforever.com",
     ]
 
     def __init__(self):
@@ -124,12 +126,12 @@ class RSSFeedAggregator:
         """
         items = []
 
-        for attempt in range(3):
+        for attempt in range(5):
             try:
                 rsshub = self._get_next_rsshub()
                 feed_url = f"{rsshub}/{url}" if not url.startswith("http") else url
 
-                response = self.session.get(feed_url, timeout=AntiBotConfig.TIMEOUT)
+                response = self.session.get(feed_url, timeout=60)
 
                 if response.status_code == 200:
                     soup = BeautifulSoup(response.content, "xml")
@@ -146,7 +148,7 @@ class RSSFeedAggregator:
                 logger.warning(
                     f"RSS fetch attempt {attempt + 1} failed for {topic}: {str(e)[:50]}"
                 )
-                time.sleep(2)
+                time.sleep(3)
 
         return items
 
@@ -597,6 +599,60 @@ class DirectWebScraper:
                 "预警",
             ],
         },
+        {
+            "name": "中国应急管理部",
+            "url": "https://www.应急管理部.com/",
+            "section": "应急管理",
+            "selectors": {
+                "items": ".news-list li, .article-list li",
+                "title": "a",
+                "date": ".date",
+            },
+            "relevant_keywords": [
+                "地铁",
+                "轨道",
+                "安全",
+                "事故",
+                "应急",
+            ],
+        },
+    ]
+
+    NEWS_PORTALS = [
+        {
+            "name": "人民交通网",
+            "url": "https://www.rmjtxw.com/",
+            "section": "人民交通",
+            "selectors": {
+                "items": ".news-list li, .article-list li",
+                "title": "a",
+                "date": ".date, .time",
+            },
+            "relevant_keywords": [
+                "地铁",
+                "轨道",
+                "安全",
+                "运营",
+                "事故",
+            ],
+        },
+        {
+            "name": "中国交通新闻网",
+            "url": "http://www.zgjtb.com/",
+            "section": "中国交通新闻",
+            "selectors": {
+                "items": ".news-list li, .article-list li",
+                "title": "a",
+                "date": ".date",
+            },
+            "relevant_keywords": [
+                "地铁",
+                "轨道",
+                "安全",
+                "运营",
+                "开通",
+            ],
+        },
     ]
 
     def __init__(self):
@@ -683,10 +739,19 @@ class DirectWebScraper:
         return items
 
     def scrape_all(self) -> List[Dict]:
-        """Scrape all authoritative sources"""
+        """Scrape all authoritative sources and news portals"""
         all_items = []
+
+        # Government and association sources
         for source in self.AUTHORITATIVE_SOURCES:
             logger.info(f"Direct scraping: {source['name']}")
+            items = self.scrape_source(source)
+            all_items.extend(items)
+            time.sleep(random.uniform(2, 4))
+
+        # News portals
+        for source in self.NEWS_PORTALS:
+            logger.info(f"News portal: {source['name']}")
             items = self.scrape_source(source)
             all_items.extend(items)
             time.sleep(random.uniform(2, 4))
