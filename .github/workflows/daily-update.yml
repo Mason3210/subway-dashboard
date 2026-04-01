@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
     
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@8264da055b6c8ee0eb2c43e01ac7898916d8a7a8
       with:
         python-version: '3.11'
         cache: 'pip'
