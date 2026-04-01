@@ -500,6 +500,227 @@ class ContentClassifier:
         return keywords[:10]
 
 
+class DirectWebScraper:
+    """
+    Direct web scraper for authoritative government and metro websites.
+    Bypasses RSSHub for more reliable data collection.
+    """
+
+    AUTHORITATIVE_SOURCES = [
+        {
+            "name": "交通运输部",
+            "url": "https://www.mot.gov.cn/",
+            "section": "交通运输部",
+            "selectors": {
+                "items": ".news-list li, .article-list li, .list-item",
+                "title": "a",
+                "date": ".date, .time",
+            },
+            "relevant_keywords": [
+                "安全",
+                "地铁",
+                "轨道",
+                "运营",
+                "应急",
+                "管理",
+                "办法",
+                "规定",
+                "标准",
+                "规范",
+                "通知",
+            ],
+        },
+        {
+            "name": "中国城市轨道交通协会",
+            "url": "https://www.camet.org.cn/sy/xydt/",
+            "section": "行业动态",
+            "selectors": {
+                "items": ".main-item",
+                "title": ".content-title",
+                "date": ".content-time .time",
+                "link": ".detail_box",
+            },
+            "relevant_keywords": [
+                "安全",
+                "运营",
+                "开通",
+                "开工",
+                "建设",
+                "技术",
+                "创新",
+                "设备",
+                "标准",
+                "规范",
+                "演练",
+                "故障",
+                "事故",
+                "新线",
+                "轨 道",
+                "地铁",
+            ],
+        },
+        {
+            "name": "国家铁路局",
+            "url": "https://www.nra.gov.cn/",
+            "section": "国家铁路局",
+            "selectors": {
+                "items": ".news-list li, .article-list li",
+                "title": "a",
+                "date": ".date",
+            },
+            "relevant_keywords": [
+                "安全",
+                "铁路",
+                "监管",
+                "规定",
+                "办法",
+                "标准",
+                "通知",
+                "处罚",
+            ],
+        },
+        {
+            "name": "应急管理部",
+            "url": "https://www.mem.gov.cn/",
+            "section": "应急管理部",
+            "selectors": {
+                "items": ".news-list li, .article-list li",
+                "title": "a",
+                "date": ".date",
+            },
+            "relevant_keywords": [
+                "安全",
+                "应急",
+                "事故",
+                "救援",
+                "灾害",
+                "预警",
+            ],
+        },
+    ]
+
+    def __init__(self):
+        self.session = requests.Session()
+        self.session.headers.update(
+            {
+                "User-Agent": AntiBotConfig.get_random_ua(),
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+            }
+        )
+
+    def fetch_page(self, url: str) -> Optional[str]:
+        """Fetch a single page"""
+        try:
+            response = self.session.get(url, timeout=AntiBotConfig.TIMEOUT)
+            if response.status_code == 200:
+                response.encoding = response.apparent_encoding or "utf-8"
+                return response.text
+        except Exception as e:
+            logger.warning(f"Failed to fetch {url}: {str(e)[:50]}")
+        return None
+
+    def scrape_source(self, source: Dict) -> List[Dict]:
+        """Scrape a single authoritative source"""
+        items = []
+        html = self.fetch_page(source["url"])
+        if not html:
+            return items
+
+        try:
+            soup = BeautifulSoup(html, "html.parser")
+            item_elements = soup.select(source["selectors"]["items"])
+
+            for elem in item_elements[:20]:
+                try:
+                    title_elem = elem.select_one(source["selectors"]["title"])
+                    if not title_elem:
+                        continue
+
+                    title = title_elem.get_text().strip()
+                    if len(title) < 10:
+                        continue
+
+                    link_elem = elem.select_one(source["selectors"].get("link", "a"))
+                    url = ""
+                    if link_elem:
+                        url = link_elem.get("href", "") or link_elem.get(
+                            "data-link", ""
+                        )
+                    if not url:
+                        url = title_elem.get("href", "")
+                    if url and not url.startswith("http"):
+                        url = urljoin(source["url"], url)
+
+                    date_elem = elem.select_one(source["selectors"]["date"])
+                    date = ""
+                    if date_elem:
+                        date_text = date_elem.get_text().strip()
+                        date = re.sub(r"日期：?", "", date_text).strip()
+
+                    text_for_check = title + source.get("section", "")
+                    if not any(
+                        kw in text_for_check
+                        for kw in source.get("relevant_keywords", [])
+                    ):
+                        continue
+
+                    items.append(
+                        {
+                            "title": title[:200],
+                            "url": url,
+                            "source": source["name"],
+                            "publish_date": date,
+                            "summary": f"来源: {source['name']}。分类: {source.get('section', '')}",
+                        }
+                    )
+                except Exception:
+                    continue
+
+        except Exception as e:
+            logger.warning(f"Failed to parse {source['name']}: {str(e)[:50]}")
+
+        return items
+
+    def scrape_all(self) -> List[Dict]:
+        """Scrape all authoritative sources"""
+        all_items = []
+        for source in self.AUTHORITATIVE_SOURCES:
+            logger.info(f"Direct scraping: {source['name']}")
+            items = self.scrape_source(source)
+            all_items.extend(items)
+            time.sleep(random.uniform(2, 4))
+
+        return all_items
+
+
+class SummaryGenerator:
+    """Generate concise summaries for news items"""
+
+    @staticmethod
+    def generate_summary(
+        title: str, source: str, category: str, keywords: List[str]
+    ) -> str:
+        """Generate a ~500 character summary based on title and metadata"""
+        summaries = {
+            "safety": f"【安全事件】{source}发布安全相关信息。关键词: {', '.join(keywords[:5])}。请访问原文获取详细信息。",
+            "law": f"【法规标准】{source}发布法规政策文件。关键词: {', '.join(keywords[:5])}。请访问原文获取详细信息。",
+            "technology": f"【技术创新】{source}报道技术进展。关键词: {', '.join(keywords[:5])}。请访问原文获取详细信息。",
+            "operation": f"【运营动态】{source}发布运营相关信息。关键词: {', '.join(keywords[:5])}。请访问原文获取详细信息。",
+            "news": f"【行业动态】{source}报道: {title}。关键词: {', '.join(keywords[:5])}。请访问原文获取详细信息。",
+        }
+        return summaries.get(category, summaries["news"])
+
+    @classmethod
+    def enhance_news_item(cls, item: NewsItem) -> NewsItem:
+        """Enhance a NewsItem with a generated summary"""
+        if not item.summary or len(item.summary) < 20:
+            item.summary = cls.generate_summary(
+                item.title, item.source, item.category, item.keywords
+            )
+        return item
+
+
 class MultiSourceScraper:
     """
     Main scraper class that coordinates multiple data sources
@@ -508,6 +729,7 @@ class MultiSourceScraper:
     def __init__(self):
         self.rss = RSSFeedAggregator()
         self.wechat = WeChatCollector()
+        self.direct = DirectWebScraper()
         self.classifier = ContentClassifier()
         self.session = requests.Session()
         self.seen_hashes = set()
@@ -783,16 +1005,27 @@ class MultiSourceScraper:
         logger.info("Starting comprehensive news collection")
         logger.info("=" * 60)
 
-        # 1. Government sources
+        # 1. Direct authoritative sources (most reliable)
+        logger.info("Fetching from authoritative government sources...")
+        try:
+            direct_items = self.direct.scrape_all()
+            for item_data in direct_items:
+                news_item = self._dict_to_newsitem(item_data)
+                if news_item:
+                    all_items.append(news_item)
+        except Exception as e:
+            logger.warning(f"Direct scraping failed: {str(e)[:50]}")
+
+        # 2. Government sources via RSS
         logger.info("Fetching government sources...")
         all_items.extend(self.fetch_government_sources())
 
-        # 2. Social media via RSS
+        # 3. Social media via RSS
         if weibo_accounts:
             logger.info(f"Fetching {len(weibo_accounts)} Weibo accounts...")
             all_items.extend(self.fetch_social_media(weibo_accounts))
 
-        # 3. Keyword-based search
+        # 4. Keyword-based search
         safety_keywords = [
             "地铁安全",
             "轨道交通事故",
@@ -800,6 +1033,9 @@ class MultiSourceScraper:
             "城市轨道交通安全",
             "metro safety incident",
             "subway emergency",
+            "轨道交通 开通",
+            "地铁 新线",
+            "轨道 事故",
         ]
         logger.info("Searching for safety-related content...")
         all_items.extend(self.fetch_keyword_alerts(safety_keywords))
@@ -814,6 +1050,10 @@ class MultiSourceScraper:
 
         # Filter out excluded items
         filtered_items = [item for item in unique_items if item.category != "exclude"]
+
+        # Enhance summaries
+        for item in filtered_items:
+            SummaryGenerator.enhance_news_item(item)
 
         self.news_items = filtered_items
         self.stats["total_collected"] = len(filtered_items)
