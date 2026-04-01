@@ -272,10 +272,66 @@ class WeChatCollector:
 class ContentClassifier:
     """Classify news content into categories"""
 
+    EXCLUDE_KEYWORDS = [
+        "会议",
+        "座谈会",
+        "研讨会",
+        "论坛",
+        "年会",
+        "博览会",
+        "展览会",
+        "签约",
+        "会见",
+        "拜访",
+        "访问",
+        "考察",
+        "参观",
+        "开幕",
+        "闭幕",
+        "致辞",
+        "讲话",
+        "发言",
+        "代表",
+        "领导",
+        "考察团",
+        "代表团",
+        "出席",
+        "参加",
+        "参会",
+        "参展",
+        "开幕词",
+        "闭幕词",
+        "合影",
+        "颁奖",
+        "授牌",
+        "挂牌",
+        "成立大会",
+        "换届",
+        "选举",
+        "任命",
+        "董事",
+        "总经理",
+        "副总裁",
+        "副主任",
+        "主任",
+        "会长",
+        "副会长",
+        "秘书长",
+        "理事长",
+        "exhibition",
+        "conference",
+        "forum",
+        "summit",
+        "visit",
+        "meeting",
+        "ceremony",
+    ]
+
     CATEGORIES = {
         "safety": [
             "安全",
             "事故",
+            "险性",
             "事件",
             "故障",
             "延误",
@@ -296,6 +352,18 @@ class ContentClassifier:
             "伤亡",
             "急救",
             "抢救",
+            "闯入",
+            "停车",
+            "停运",
+            "延误",
+            "晚点",
+            "冒烟",
+            "停电",
+            "停水",
+            "塌陷",
+            "坠落",
+            "乘客",
+            "伤亡",
         ],
         "law": [
             "法规",
@@ -317,31 +385,48 @@ class ContentClassifier:
             "发改委",
             "应急管理部",
             "通知",
-            "办法",
+            "GB ",
+            "TB ",
+            "CJ ",
+            "建标",
+            "发布",
+            "批准",
+            "施行",
+            "修订",
+            "征求意见",
+            "公示",
         ],
         "technology": [
-            "智慧",
-            "智能",
             "创新",
             "技术",
             "系统",
             "升级",
             "改造",
-            "设备",
             "technology",
             "innovation",
             "system",
             "upgrade",
-            "smart",
             "AI",
             "无人驾驶",
-            "全自动",
+            "全自动运行",
+            "FAO",
             "云平台",
             "大数据",
             "人工智能",
+            "智能运维",
+            "智慧地铁",
+            "5G",
+            "车车通信",
+            "自主运行",
+            "信号系统",
+            "屏蔽门",
+            "新技术",
+            "新突破",
+            "首试",
+            "首次",
+            "突破",
         ],
         "operation": [
-            "运营",
             "开通",
             "试运行",
             "开通运营",
@@ -359,12 +444,35 @@ class ContentClassifier:
             "运行",
             "首班车",
             "末班车",
+            "新线",
+            "开工",
+            "在建",
+            "建成",
+            "投入运营",
+            "联调联试",
+            "空载",
+            "试运营",
+            "初期运营",
+            "竣工",
+            "验收",
         ],
     }
 
     @classmethod
+    def should_exclude(cls, title: str, summary: str = "") -> bool:
+        """Check if content should be excluded based on negative keywords"""
+        text = (title + " " + summary).lower()
+        for kw in cls.EXCLUDE_KEYWORDS:
+            if kw.lower() in text:
+                return True
+        return False
+
+    @classmethod
     def classify(cls, title: str, summary: str = "") -> str:
         """Classify content into category"""
+        if cls.should_exclude(title, summary):
+            return "exclude"
+
         text = (title + " " + summary).lower()
 
         scores = {}
@@ -704,11 +812,16 @@ class MultiSourceScraper:
                 seen_urls.add(item.url)
                 unique_items.append(item)
 
-        self.news_items = unique_items
-        self.stats["total_collected"] = len(unique_items)
+        # Filter out excluded items
+        filtered_items = [item for item in unique_items if item.category != "exclude"]
+
+        self.news_items = filtered_items
+        self.stats["total_collected"] = len(filtered_items)
 
         logger.info("=" * 60)
-        logger.info(f"Collection complete: {len(unique_items)} unique items")
+        logger.info(
+            f"Collection complete: {len(filtered_items)} unique items (filtered from {len(unique_items)})"
+        )
         logger.info(f"Sources tried: {self.stats['sources_tried']}")
         logger.info(f"Successful: {self.stats['successful_sources']}")
         logger.info("=" * 60)
