@@ -395,6 +395,31 @@ HK_MACAU_METRO = [
     },
 ]
 
+# Hong Kong-invested metro operators in mainland China
+HK_INVESTED_MAINLAND = [
+    {
+        "name": "京港地铁",
+        "city": "北京",
+        "url": "https://www.mtrbj.com",
+        "weibo": "京港地铁",
+        "wechat": "MTR_Beijing",
+    },
+    {
+        "name": "杭港地铁",
+        "city": "杭州",
+        "url": "https://www.mtrhz.com.cn",
+        "weibo": "杭港地铁",
+        "wechat": "mtrhz",
+    },
+    {
+        "name": "港铁深圳",
+        "city": "深圳",
+        "url": "https://www.mtrsz.com.cn",
+        "weibo": "港铁深圳",
+        "wechat": "mtrsz",
+    },
+]
+
 # Industry associations and government sources
 GOVERNMENT_SOURCES = [
     {
@@ -1125,6 +1150,9 @@ SOCIAL_MEDIA_SOURCES = {
         {"name": "佛山地铁", "id": "foshanmetro"},
         {"name": "南宁轨道交通", "id": "nnzdtz"},
         {"name": "中国城市轨道交通协会", "id": "camet123"},
+        {"name": "京港地铁", "id": "MTR_Beijing"},
+        {"name": "杭港地铁", "id": "mtrhz"},
+        {"name": "港铁深圳", "id": "mtrsz"},
     ],
 }
 
