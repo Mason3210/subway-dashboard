@@ -22,7 +22,7 @@ jobs:
     
     - name: Install dependencies
       run: |
-        pip install requests beautifulsoup4 lxml Pillow urllib3 certifi
+        pip install -r requirements.txt
     
     - name: Run news fetcher
       id: fetch
